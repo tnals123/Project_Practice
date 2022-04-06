@@ -126,13 +126,14 @@
 
 
         <ScrollView
+            android:id="@+id/postEditScrollView"
             android:layout_width="match_parent"
             android:layout_height="250dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView">
 
-            <EditText
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/asdfasdf"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -142,7 +143,9 @@
                 android:privateImeOptions="nm"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                ></EditText>
+                >
+
+            </com.google.android.material.textfield.TextInputEditText>
 
 
         </ScrollView>

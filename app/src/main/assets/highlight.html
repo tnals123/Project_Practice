@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+         function insertCode(myclass,mycode){
+             let pre_tag = document.getElementById("codeBlock");
+             let code_tag = document.createElement('code');
+             code_tag.setAttribute("class",myclass);
+             code_tag.innerHTML = mycode;
+
+             pre_tag.appendChild(code_tag);
+
+         }
+
+        function showAndroidToast(toast) {
+            Android.showToast(toast);
+        }
+     </script>
+
+
+</head>
+<body>
+    <pre id = "codeBlock"><code class = "language-javascript">
+//나는 모르겠어~
+var root_url = document.querySelector('#skin_root_url').getAttribute('content');
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+        plugin_codeblock(block);
+    });
+});
+
+var code_langs_dict = {
+    'language-apache': 'APACHE',
+    'language-bash': 'BASH',
+    'language-coffeescript': 'CoffeeScript',
+    'language-cpp': 'C++',
+    'language-cs': 'C#',
+    'language-css': 'CSS',
+    'language-go': 'Go',
+    'language-ini': 'INI(TOML)',
+    'language-java': 'Java',
+    'language-javascript': 'JavaScript',
+    'language-json': 'JSON',
+    'language-kotlin': 'Kotlin',
+    'language-less': 'Less',
+    'language-lua': 'Lua',
+    'language-xml': 'XML',
+    'language-markdown': 'Markdown',
+    'language-nginx': 'NGINX',
+    'language-objectivec': 'Objective-C',
+    'language-perl': 'Perl',
+    'language-php': 'PHP',
+    'language-plaintext': 'TEXT',
+    'language-python': 'Python',
+    'language-ruby': 'Ruby',
+    'language-rust': 'Rust',
+    'language-scss': 'SASS(SCSS)',
+    'language-shell': 'Shell',
+    'language-sql': 'SQL',
+    'language-swift': 'Swift',
+    'language-typescript': 'TypeScript',
+    'language-yaml': 'YAML'
+}
+
+function plugin_codeblock(block) {
+    let wrapper = block.parentElement;
+    let menubar = document.createElement("DIV");
+    for (let i = 0, cls; cls = block.classList[i]; i++) {
+        if (/language-.*/.test(cls)) {
+            let logo_src = `${root_url}/${cls}.png`;
+            let name = code_langs_dict[cls];
+            menubar.innerHTML = `<img class="logo" src="${logo_src}"><span class="lang">${name}</span>`
+        } else if (cls != "hljs") {
+            let logo_src = `${root_url}/language-${cls}.png`;
+            let name = code_langs_dict[`language-${cls}`];
+            menubar.innerHTML = `<img class="logo" src="${logo_src}"><span class="lang">${name}</span>`
+        }
+    }
+    wrapper.classList.add('ss_codeblock_wrapper');
+    menubar.classList.add('ss_codeblock_menubar');
+    wrapper.appendChild(menubar);
+}
+
+
+    </code></pre>
+
+</body>
+</html>
