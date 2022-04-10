@@ -5,94 +5,70 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/vs2015.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js" integrity="sha512-z+/WWfyD5tccCukM4VvONpEtLmbAm5LDu7eKiyMQJ9m7OfPEDL7gENyDRL3Yfe8XAuGsS2fS4xSMnl6d30kqGQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script>
-         function insertCode(myclass,mycode){
-             let pre_tag = document.getElementById("codeBlock");
-             let code_tag = document.createElement('code');
-             code_tag.setAttribute("class",myclass);
-             code_tag.innerHTML = mycode;
-
-             pre_tag.appendChild(code_tag);
-
-         }
-
-        function showAndroidToast(toast) {
-            Android.showToast(toast);
-        }
-     </script>
-
 
 </head>
-<body>
-    <pre id = "codeBlock"><code class = "language-javascript">
-//나는 모르겠어~
-var root_url = document.querySelector('#skin_root_url').getAttribute('content');
 
-document.addEventListener('DOMContentLoaded', (event) => {
-    document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightBlock(block);
-        plugin_codeblock(block);
-    });
-});
+<script>
 
-var code_langs_dict = {
-    'language-apache': 'APACHE',
-    'language-bash': 'BASH',
-    'language-coffeescript': 'CoffeeScript',
-    'language-cpp': 'C++',
-    'language-cs': 'C#',
-    'language-css': 'CSS',
-    'language-go': 'Go',
-    'language-ini': 'INI(TOML)',
-    'language-java': 'Java',
-    'language-javascript': 'JavaScript',
-    'language-json': 'JSON',
-    'language-kotlin': 'Kotlin',
-    'language-less': 'Less',
-    'language-lua': 'Lua',
-    'language-xml': 'XML',
-    'language-markdown': 'Markdown',
-    'language-nginx': 'NGINX',
-    'language-objectivec': 'Objective-C',
-    'language-perl': 'Perl',
-    'language-php': 'PHP',
-    'language-plaintext': 'TEXT',
-    'language-python': 'Python',
-    'language-ruby': 'Ruby',
-    'language-rust': 'Rust',
-    'language-scss': 'SASS(SCSS)',
-    'language-shell': 'Shell',
-    'language-sql': 'SQL',
-    'language-swift': 'Swift',
-    'language-typescript': 'TypeScript',
-    'language-yaml': 'YAML'
-}
-
-function plugin_codeblock(block) {
-    let wrapper = block.parentElement;
-    let menubar = document.createElement("DIV");
-    for (let i = 0, cls; cls = block.classList[i]; i++) {
-        if (/language-.*/.test(cls)) {
-            let logo_src = `${root_url}/${cls}.png`;
-            let name = code_langs_dict[cls];
-            menubar.innerHTML = `<img class="logo" src="${logo_src}"><span class="lang">${name}</span>`
-        } else if (cls != "hljs") {
-            let logo_src = `${root_url}/language-${cls}.png`;
-            let name = code_langs_dict[`language-${cls}`];
-            menubar.innerHTML = `<img class="logo" src="${logo_src}"><span class="lang">${name}</span>`
+        function update_code() {
+            const result_elem = document.querySelector("#highlighting-code code");
+            const text = document.querySelector("#editing-code").value;
+            let html = hljs.highlightAuto(text).value;
+            console.log(html);
+            result_elem.innerHTML =  html.replace(new RegExp("  ", "g"), "&nbsp; ");;
         }
-    }
-    wrapper.classList.add('ss_codeblock_wrapper');
-    menubar.classList.add('ss_codeblock_menubar');
-    wrapper.appendChild(menubar);
-}
+
+        function resize() {
+            const editor = document.querySelector('#editing-code');
+            editor.style.height = "20px";
+            editor.style.height = (editor.scrollHeight + 5)+"px";
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            update_code();
+            resize();
+            });
+
+        function block(){
+            var transe = document.getElementById("editing-code");
+            var blocking = document.getElementById("highlighting-code");
+            blocking.style.display = "block";
+            transe.style.backgroundColor = "transparent";
+            transe.style.outline = "none";
+            transe.style.border = "none";
+        }
 
 
-    </code></pre>
+
+
+
+    </script>
+
+<body>
+<div style="height: 300px;">
+        <textarea
+                id="editing-code"
+                cols="80"
+                placeholder="소스코드 입력"
+                spellcheck="false"
+                style="max-height: 300px; width:600px; top: 10px; resize: none; overflow: scroll; "
+                onclick="block();update_code(); resize();"
+                oninput="update_code(); resize();">
+# 클릭 시 코드창이 뜹니다. 바로 입력해 주세요
+
+print('Hello, world!')
+        </textarea>
+</div>
+<pre
+        style="height:300px;width:600px; display: none; position: absolute; top: 0;"
+        id="highlighting-code"
+        class="hljs">
+  <code></code>
+</pre>
+
 
 </body>
 </html>

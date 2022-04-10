@@ -26,20 +26,11 @@ import android.text.style.ClickableSpan
 
 import android.text.method.LinkMovementMethod
 import android.view.Gravity
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import android.widget.RelativeLayout
 import android.webkit.WebSettings.PluginState
-
-import android.webkit.WebChromeClient
-
-
-
-
-
-
 
 
 //코드 블록 사진 생길때, 없애고 webview 할때, edittext 할때, 처음 코드 블록이 생성됐을 때 index를 받아서 거따가 insert, delete 하기!
@@ -218,7 +209,7 @@ class MainActivity : AppCompatActivity() {
         conFormButton.layoutParams = buttonparams
 
         conFormButton.setOnClickListener(){
-            conFormCodeInsert(codeBlockIindex, textBehindCodeBlock , textFrontCodeBlock)
+            conFormCodeInsert(codeBlockIindex, textBehindCodeBlock , textFrontCodeBlock , codeBlock.text.toString())
         }
 
 
@@ -245,7 +236,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun conFormCodeInsert(codeBlockIindex : Int, textBehindCodeBlock : String , textFrontCodeBlock : String){
+    fun conFormCodeInsert(codeBlockIindex : Int, textBehindCodeBlock : String , textFrontCodeBlock : String , code : String){
 
         var editTextScroll = findViewById<ScrollView>(R.id.postEditScrollView)
         editTextScroll.removeAllViews()
@@ -278,8 +269,21 @@ class MainActivity : AppCompatActivity() {
         codeWithHighLight.settings.javaScriptEnabled = true
 //        codeWithHighLight.loadUrl("javascript:insertCode('language-javascript',var asdf = asdf)");
 //
-//        codeWithHighLight.loadUrl("javascript:testEcho('Hello World!')");
+
+        class WebBrideg(private val mContext: Context) {
+            @JavascriptInterface
+            fun showToast(code : String) {
+                Toast.makeText(mContext, code, Toast.LENGTH_SHORT).show()
+            }
+        }
+        codeWithHighLight.addJavascriptInterface(WebBrideg(this),"Kchoi")
         codeWithHighLight.loadUrl(weburl)
+
+
+
+
+
+
 
         var editTextFrontCodeBlock = EditText(this)
         editTextFrontCodeBlock.setSingleLine(false)
@@ -312,11 +316,5 @@ class MainActivity : AppCompatActivity() {
 
 
     }
-
-
-
-
-
-
 
 }
