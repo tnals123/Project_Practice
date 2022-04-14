@@ -138,7 +138,7 @@
             app:layout_constraintVertical_bias="1.0">
 
             <LinearLayout
-
+                android:id="@+id/body_box"
                 android:background="@drawable/body_box"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -191,32 +191,11 @@
                     android:text="당신의 질문에 답하기 위해 필요한 모든 정보를 적어주세요.">
                 </TextView>
 <!--                여기를 webview 로 완전히 감싸고 게시물을 html 로 짜야할듯-->
-                <ScrollView
+                <WebView
+                    android:id="@+id/body_webview"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="@drawable/body_box">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/body_edittext"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@android:color/transparent"
-                        android:gravity="top"
-                        android:inputType="textNoSuggestions|textMultiLine"
-                        android:padding="10dp"
-                        android:privateImeOptions="nm"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent">
-
-                    </com.google.android.material.textfield.TextInputEditText>
-
-                </ScrollView>
-
-                <ScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp">
-                </ScrollView>
+                    android:layout_height="400dp">
+                </WebView>
 
 
 
@@ -252,13 +231,6 @@
 
         </LinearLayout>
 
-        <ImageView
-            android:id="@+id/imageview"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            app:layout_constraintBottom_toTopOf="@+id/linearLayout2"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"></ImageView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 

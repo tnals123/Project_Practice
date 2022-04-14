@@ -11,13 +11,12 @@
 
 </head>
 
-<script>
-
+    <script>
+    
         function update_code() {
             const result_elem = document.querySelector("#highlighting-code code");
             const text = document.querySelector("#editing-code").value;
             let html = hljs.highlightAuto(text).value;
-            console.log(html);
             result_elem.innerHTML =  html.replace(new RegExp("  ", "g"), "&nbsp; ");;
         }
 
@@ -32,46 +31,44 @@
             resize();
             });
 
-        function block(){
+
+        window.onload = function showAndroidToast() {
+            var mywidth = Android.getwidth();
+            var px = Android.getwidth(mywidth);
+            var mypx = px - 29;
+            var mypx_codeblcok = px - 32;
+            Android.showToast(String(mypx));
             var transe = document.getElementById("editing-code");
-            var blocking = document.getElementById("highlighting-code");
-            blocking.style.display = "block";
-            transe.style.backgroundColor = "transparent";
-            transe.style.outline = "none";
-            transe.style.border = "none";
-        }
-        function showAndroidToast(toast) {
-            Android.showToast(toast);
+            var code_block = document.getElementById("highlighting-code")
+            transe.style.width = mypx+"px";
+            code_block.style.width = mypx_codeblcok+"px";
         }
 
 
-
-
-
+        
     </script>
 
-<body>
-<div style="height: 300px;">
+<body style="margin: 0;">
+    <div style="height: 300px;">
         <textarea
-                id="editing-code"
-                cols="80"
-                placeholder="소스코드 입력"
-                spellcheck="false"
-                style="max-height: 300px; width:600px; top: 10px; resize: none; overflow: scroll; "
-                onclick="block();update_code(); resize();"
-                oninput="update_code(); resize();">
+        id="editing-code"
+        placeholder="소스코드 입력"
+        spellcheck="false"
+        style="max-height: 300px; width:1000px; top: 10px; resize: none; overflow: scroll; margin : 0  "
+        onclick="update_code(); resize(); showAndroidToast()"
+        oninput="update_code(); resize();">
 # 클릭 시 코드창이 뜹니다. 바로 입력해 주세요
-
+        
 print('Hello, world!')
         </textarea>
-</div>
-<pre
-        style="height:300px;width:600px; display: none; position: absolute; top: 0;"
-        id="highlighting-code"
-        class="hljs">
+    </div>
+  <pre
+  style="height:300px;width:600px;"
+  id="highlighting-code"
+  class="hljs">
   <code></code>
 </pre>
-
+    
 
 </body>
 </html>
