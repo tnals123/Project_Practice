@@ -148,6 +148,7 @@
 
                 <TextView
                     android:layout_width="wrap_content"
+                    android:id="@+id/test"
                     android:layout_height="wrap_content"
                     android:text="제목"
                     android:layout_marginBottom="5dp"
@@ -181,15 +182,30 @@
                     android:textStyle="bold"
                     android:textSize="16sp">
                 </TextView>
-
-                <TextView
+                
+                <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="5dp"
-                    android:textSize="12sp"
-                    android:layout_marginEnd="10dp"
-                    android:text="당신의 질문에 답하기 위해 필요한 모든 정보를 적어주세요.">
-                </TextView>
+                    android:orientation="horizontal"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="5dp"
+                        android:textSize="12sp"
+                        android:layout_marginEnd="10dp"
+                        android:text="당신의 질문에 답하기 위해 필요한 모든 정보를 적어주세요.">
+                    </TextView>
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="1dp"></View>
+
+
+                </LinearLayout>
+
+
+
+
 <!--                여기를 webview 로 완전히 감싸고 게시물을 html 로 짜야할듯-->
                 <WebView
                     android:id="@+id/body_webview"
@@ -204,32 +220,50 @@
 
         </ScrollView>
 
-        <LinearLayout
-            android:id="@+id/linearLayout2"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="#F2F2F2"
-            android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent">
+<!--        <LinearLayout-->
+<!--            android:id="@+id/linearLayout2"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="50dp"-->
+<!--            android:background="#F2F2F2"-->
+<!--            android:orientation="horizontal"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintLeft_toLeftOf="parent"-->
+<!--            app:layout_constraintRight_toRightOf="parent">-->
 
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="10dp"
-                android:src="@drawable/image_icon"></ImageView>
+<!--            <ImageView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginLeft="10dp"-->
+<!--                android:src="@drawable/image_icon"></ImageView>-->
 
-            <ImageView
-                android:id="@+id/codeblock"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="20dp"
-                android:src="@drawable/codeblock"></ImageView>
+<!--            <ImageView-->
+<!--                android:id="@+id/codeblock"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginLeft="20dp"-->
+<!--                android:src="@drawable/codeblock"></ImageView>-->
 
-        </LinearLayout>
+<!--            <ImageView-->
+<!--                android:id="@+id/bold"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginLeft="20dp"-->
+<!--                android:src="@drawable/codeblock"></ImageView>-->
+
+<!--            <ImageView-->
+<!--                android:id="@+id/italic"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginLeft="20dp"-->
+<!--                android:src="@drawable/codeblock"></ImageView>-->
+
+
+
+<!--        </LinearLayout>-->
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

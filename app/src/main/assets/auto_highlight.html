@@ -7,68 +7,615 @@
     <title>Document</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js" integrity="sha512-z+/WWfyD5tccCukM4VvONpEtLmbAm5LDu7eKiyMQJ9m7OfPEDL7gENyDRL3Yfe8XAuGsS2fS4xSMnl6d30kqGQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
+    <script>hljs.highlightAll();</script>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+
+    <style>
+        pre{
+            font-family: 'Source Code Pro';
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        code{
+            line-height: 1.5;
+            height: 40px;
+        }
+        textarea:focus {
+            outline: none;
+        }
+
+        .mdhelp {
+            background-color: hsl(210,8%,95%);
+            border: 1px solid gray;
+            height: fit-content;
+            color: var(--fc-dark);
+            border-right: 1px solid var(--bc-darker);
+            border-left: 1px solid var(--bc-darker);
+        }
+
+        .mdhelp-tabs li {
+            display: inline-block;
+            height: fit-content;
+            font-weight: bold;
+            padding: 6px 0px 6px;
+            margin: 0 2px;
+            font-size: 8px;
+            cursor: pointer;
+        }
+
+        .mdhelp-tabs {
+            background-color: var(--black-050);
+            list-style-type: none;
+            margin: 0;
+            padding: 0 0 0 3px;
+            overflow: hidden;
+        }
+
+
+        .chatbox {animation: motion 1.3s linear 0s 1; }
+        .nochatbox {animation: motion 1.3s linear 0s 1; margin-top: 0;}
+
+        @keyframes motion {
+            0% {margin-top: 0px;}
+            20% {margin-top: 0px;}
+            40% {margin-top: 10px;}
+            60% {margin-top: 0px;}
+            80% {margin-top: 10px;}
+            100% {margin-top: 0px;}
+        }
+
+
+        .wmd-button-bar {
+            clear: both;
+            background-color: transparent;
+            margin: -1 0 0 0;
+            padding: 0;
+            width: 400;
+            min-height: 44px;
+            overflow: hidden;
+            z-index: 2;
+            position: relative;
+        }
+        .wmd-button-row {
+            padding: 0 var(--su4) 0 var(--su8);
+            margin: 0;
+            display: flex;
+            list-style: none;
+            flex-wrap: wrap;
+            height: 44px;
+            border-bottom: 1px solid var(--bc-darker);
+        }
+
+        .wmd-button {
+            max-width: 28px;
+            height: 44px;
+            flex: 10 0 23px;
+            padding: 0;
+            padding: 12px 0 0 0;
+            text-align: center;
+            cursor: pointer;
+        }
+        .wmd-button>span {
+            background-image: url(https://cdn.sstatic.net/Img/unified/wmd-buttons.svg?v=c26278fc22d9);
+            background-size: initial !important;
+        }
+        .wmd-button>span {
+            background-repeat: no-repeat;
+            background-position: 0 0;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        .wmd-spacer {
+            height: 44px;
+            flex: 1 0 4px;
+            max-width: 27px;
+            width: 2px;
+            display: flex;
+            flex-wrap: wrap;
+            overflow: hidden;
+            position: relative;
+            list-style: none;
+            border: 0;
+            font: inherit;
+            font-size: 100%;
+            vertical-align: baseline;
+            box-sizing: inherit;
+            left: 4px;
+        }
+        .wmd-spacer:after {
+            background: var(--black-200);
+            width: 1px;
+            height: 43px;
+            margin-top: 1px;
+        }
+
+
+
+    </style>
 
 </head>
 
-    <script>
-    
-        function update_code() {
-            const result_elem = document.querySelector("#highlighting-code code");
-            const text = document.querySelector("#editing-code").value;
-            let html = hljs.highlightAuto(text).value;
-            result_elem.innerHTML =  html.replace(new RegExp("  ", "g"), "&nbsp; ");;
+<script>
+
+        var count = 0;
+        var opacity = 0;
+        var my = 0;
+        var animation = 0;
+
+        function setAnimation_Bold_Italic(){
+            var setbold = document.getElementById("setbold");
+            var setitalic = document.getElementById("setitalic");
+
+            setbold.classList.remove('chatbox');
+            void setbold.offsetWidth;
+            setbold.classList.add('chatbox');
+
+            setitalic.classList.remove('chatbox');
+            void setitalic.offsetWidth;
+            setitalic.classList.add('chatbox');
+        }
+
+        function setAnimation_Other(element){
+            element.classList.remove('chatbox');
+            void element.offsetWidth;
+            element.classList.add('chatbox');
+        }
+
+
+
+        function update_mycode(){
+            var asdf = 0;
+            var textcound = 0 ;
+            var checkTagRequired = true;
+            var first = 0;
+            var final = 0;
+
+            var boldfirst = 0 ;
+            var boldfinal = 0;
+            var boldcount = 0;
+
+            var italicfirst = 0 ;
+            var italicfinal = 0;
+            var italiccount = 0;
+
+            var result_elem = document.getElementById("count1");
+            var text = document.getElementById("editing-code");
+            var lines = text.value.split("\n");
+            var lines2 = text.value.split("‛");
+            var resultString = "";
+
+
+            for (var i = 0; i < lines.length; i++) {
+                 resultString += "<p>"+ lines[i] + "</p>";
+            }
+
+            for (var i = 0 ; i <resultString.length; i++){
+
+                if (resultString[i] == "『"){
+                    if (boldcount == 0){
+                        boldfirst = i;
+                        boldcount += 1;
+                    }
+                }
+                else if (resultString[i] == "』"){
+                    if (boldcount == 1){
+                        boldfinal = i;
+                        boldcount += 1;
+                    }
+                }
+                if (boldcount == 2){
+                    var boldtext = resultString.slice(boldfirst,boldfinal + 1);
+                    var boldinnertext = resultString.slice(boldfirst+1,boldfinal);
+                    console.log(boldtext)
+                    resultString = resultString.replace(new RegExp(boldtext, "g"),"<span style=" + "font-weight:bold;"+">"+boldinnertext+"</span>");
+                    boldcount = 0;
+                }
+
+                else if (resultString[i] == "「"){
+                    if (italiccount == 0){
+                        italicfirst = i;
+                        italiccount += 1;
+                    }
+                }
+                else if (resultString[i] == "」"){
+                    if (italiccount == 1){
+                        italicfinal = i;
+                        italiccount += 1;
+                    }
+                }
+                if (italiccount == 2){
+                    var italictext = resultString.slice(italicfirst,italicfinal + 1);
+                    var italicinnertext = resultString.slice(italicfirst+1,italicfinal);
+                    console.log(italicfirst,italicfinal)
+                    resultString = resultString.replace(new RegExp(italictext, "g"),"<span style=" + "font-style:italic;"+">"+italicinnertext+"</span>");
+                    italiccount = 0;
+                }
+
+                else if (resultString[i] == "‛"){
+                    if (textcound == 0){
+                            first = i;
+                            textcound += 1;
+                        }
+                        else if (textcound == 1){
+                            final = i;
+                            textcound += 1;
+                        }
+                }
+                if (textcound == 2){
+
+                    String.prototype.replaceAt = function(index, replacement) {
+                        return this.substring(0, index) + replacement + this.substring(index + replacement.length);
+                    }
+
+                    var mytext = resultString.slice(first+1,final);
+                    var mytext2 = mytext
+                    console.log(mytext)
+                    var mytext3 = mytext.replace(new RegExp("</p><p>", "g"), "<br>");
+                    console.log(mytext3)
+                    let html = hljs.highlightAuto(mytext3).value;
+
+
+                    for (i = 0 ; i <html.length ; i ++){
+                        try{
+                            if (html[i] == " "){
+                                if (html[i-1] && html[i+1] == " "){
+                                    console.log(i)
+                                    html = html.slice(0,i) + "&nbsp;" + html.slice(i+1)
+                                    console.log(html)
+                                }
+                            }
+                        }
+                        catch(err){
+                            //pass
+                        }
+                    }
+
+                    console.log(html)
+                    var html3 = html.replace(new RegExp('&lt;br&gt;', "g"),'<br>')
+                    var html4 = html3.replace(new RegExp('<span class="hljs-tag">&lt;<span class="hljs-name">br</span>&gt;</span>', "g"),'<br>')
+
+
+                    resultString = resultString.replace(resultString.slice(first,final+1),"<pre id = 'asdf' " + " onchange = " + '"'+ auto_grow2(document.getElementById("asdf")) + '"' + "style = width:fit-content;" +"white-space:pre-line;" +"background-color:#D3D3D3;"+ "><code style = border-radius:3px;"+"word-break:break-all;"+">"  + html4 + "</code></pre>")
+                    textcound = 0;
+                }
+
+            }
+
+
+
+
+            result_elem.innerHTML = resultString;
+
+        }
+
+
+
+        function update_code2() {
+            var result_elem = document.querySelector("#count1");
+            var text = document.querySelector("#editing-code")
+        }
+
+        function auto_grow(element) {
+            console.log(element);
+            element.style.height = "5px";
+            element.style.height = (element.scrollHeight)+"px";
+        }
+        function auto_grow2(element) {
+            if (my > 0){
+                console.log(element);
+                element.style.height = "5px";
+                element.style.height = (element.scrollHeight)+"px";
+            }
+            my += 1;
         }
 
         function resize() {
             const editor = document.querySelector('#editing-code');
             editor.style.height = "20px";
             editor.style.height = (editor.scrollHeight + 5)+"px";
+            document.getElementById("undobutton").style.backgroundPosition = "-200px 0px"
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            update_code();
-            resize();
-            });
+<!--        function myupdate(){-->
+<!--            var mywidth = window.Android.getwidth();-->
+<!--            var px = window.Android.getwidth(mywidth);-->
+<!--            window.Android.showToast("asdf");-->
+<!--            var mypx = px - 29.5;-->
+<!--            var mypx_codeblcok = px - 32.5;-->
+<!--            var transe = document.getElementById("editing-code");-->
+<!--            var code_block = document.getElementById("count1")-->
+<!--            transe.style.width = mypx+"px";-->
+<!--            code_block.style.width = mypx_codeblcok+"px";-->
+<!--            }-->
+<!--        }-->
 
+
+        function insertCodeBlock(position){
+            var paper = document.getElementById("editing-code");
+            var result_elem = document.querySelector("#count1");
+            console.log(position);
+
+            var paper_childtext = paper.childNodes[0];
+
+            var result_childtext = result_elem.childNodes[0];
+            var codeblock = document.createElement("textarea");
+
+
+            codeblock.style.height = "20px";
+            codeblock.style.width = "300px";
+            codeblock.style.overflow = "none";
+            codeblock.style.resize = "none";
+
+
+            codeblock.oninput = function(){
+                auto_grow(this);
+            }
+            console.log(paper_childtext.length)
+            console.log(paper_childtext.splitText(position));
+            paper.insertBefore(codeblock, paper_childtext.splitText(position));
+
+        }
+
+        function insertAtCursor(myField, myValue) {
+            if (document.selection) {
+                myField.focus();
+                sel = document.selection.createRange();
+                sel.text = myValue;
+            }
+            else if (myField.selectionStart || myField.selectionStart == '0') {
+                var startPos = myField.selectionStart;
+                var endPos = myField.selectionEnd;
+                myField.value = myField.value.substring(0, startPos)
+                    + myValue
+                    + myField.value.substring(endPos, myField.value.length);
+            } else {
+                myField.value += myValue;
+            }
+        }
+
+        function setOpacity(){
+            update_mycode()
+            if (opacity == 0){
+                document.getElementById("preView").style.backgroundPosition = "-260px 0px";
+                opaCiTyNone();
+                opacity = 1;
+            }
+            else if (opacity == 1){
+                document.getElementById("preView").style.backgroundPosition = "-260px center";
+                opaCiTyOn();
+                opacity = 0;
+            }
+        }
+
+        function opaCiTyNone(){
+            var result_elem = document.getElementById("count1");
+            result_elem.style.display = "block";
+        }
+        function opaCiTyOn(){
+            var result_elem = document.getElementById("count1");
+            result_elem.style.display = "none";
+        }
+
+        function preventEvent(el){
+
+            el.onmousedown = function(e){
+            e = e || window.event;
+            e.preventDefault();
+        }
+        }
+
+        function putPicture(url){
+            var str=document.getElementById("count1");
+            var resulttext = str.innerHTML;
+            resulttext = resulttext + "<img src = "+"//" + url + "//" + "/>
+        }
+
+        function changeBoldStyle() {
+            var count = 0;
+            var sel = window.getSelection();
+            var str=document.getElementById("editing-code");
+            var e = document.createElement('span');
+            e.innerHTML = sel.toString();
+            console.log(e.innerHTML)
+            for (i = 0 ; i <e.innerHTML.length; i++){
+                if (e.innerHTML[i] == "『" || e.innerHTML[i] =="』" ){
+                    count += 1
+                }
+            }
+            if (count == 2){
+                var mystr = str.value.replace(e.innerHTML, e.innerHTML.slice(1,e.innerHTML.length-1));
+                str.value = mystr;
+            }
+            else{
+                var mystr = str.value.replace(e.innerHTML,"『" + e.innerHTML + "』");
+                str.value = mystr;
+            }
+
+            update_mycode()
+            }
+
+        function doUndo(){
+            if(document.queryCommandEnabled("undo")){
+                document.execCommand('undo', false, null);
+                document.getElementById("redobutton").style.backgroundPosition = "-220px 0px"
+            }
+            else{
+                document.getElementById("undobutton").style.backgroundPosition = "-200px center"
+            }
+        }
+
+        function doRedo(){
+
+            if(document.queryCommandEnabled("redo")){
+                document.execCommand('redo', false, null);
+            }
+            else{
+                document.getElementById("redobutton").style.backgroundPosition = "-220px center"
+            }
+
+            }
+
+        function changeItalicStyle() {
+            var count = 0;
+            var sel = window.getSelection();
+            var str=document.getElementById("editing-code");
+            var e = document.createElement('span');
+            e.innerHTML = sel.toString();
+            for (i = 0 ; i <e.innerHTML.length; i++){
+                if (e.innerHTML[i] == "「" || e.innerHTML[i] =="」" ){
+                    count += 1
+                }
+            }
+            if (count == 2){
+                var mystr = str.value.replace(e.innerHTML, e.innerHTML.slice(1,e.innerHTML.length-1));
+                str.value = mystr;
+            }
+            else{
+                var mystr = str.value.replace(e.innerHTML,"「" + e.innerHTML + "」");
+                str.value = mystr;
+            }
+
+            update_mycode()
+        }
 
         window.onload = function showAndroidToast() {
             var mywidth = Android.getwidth();
             var px = Android.getwidth(mywidth);
             var mypx = px - 29;
-            var mypx_codeblcok = px - 32;
+            var mypx_codeblcok = px - 40;
             Android.showToast(String(mypx));
             var transe = document.getElementById("editing-code");
-            var code_block = document.getElementById("highlighting-code")
+            var code_block = document.getElementById("count1")
             transe.style.width = mypx+"px";
             code_block.style.width = mypx_codeblcok+"px";
+            document.getElementById(id).width = newContent;
+        }
+
+        function loadImage(){
+            document.getElementById("loadfile").click();
         }
 
 
-        
     </script>
 
 <body style="margin: 0;">
-    <div style="height: 300px;">
-        <textarea
-        id="editing-code"
-        placeholder="소스코드 입력"
-        spellcheck="false"
-        style="max-height: 300px; width:1000px; top: 10px; resize: none; overflow: scroll; margin : 0  "
-        onclick="update_code(); resize(); showAndroidToast()"
-        oninput="update_code(); resize();">
-# 클릭 시 코드창이 뜹니다. 바로 입력해 주세요
-        
-print('Hello, world!')
-        </textarea>
+<div style="border: 1px solid gray; border-radius: 3px; width: fit-content; height: fit-content;" >
+
+    <div id="wmd-button-bar" class="wmd-button-bar btr-sm mt0">
+        <ul id="wmd-button-row" class="wmd-button-row">
+            <li class="wmd-button" id="wmd-bold-button" title="Strong <strong> Ctrl+B">
+                <span id = "setbold" onmouseenter="preventEvent(this)" onclick = "changeBoldStyle()" style="background-position: 0px 0px;"></span>
+            </li>
+
+            <li class="wmd-button" id="wmd-italic-button" title="Emphasis <em> Ctrl+I">
+                <span id = "setitalic" onmouseenter="preventEvent(this)" onclick = "changeItalicStyle()" style="background-position: -20px 0px;"></span>
+            </li>
+
+            <li class="wmd-spacer">
+            </li>
+
+
+
+            <li class="wmd-button" id="wmd-code-button" title="Code Sample <pre><code> Ctrl+K">
+                <span id = "code" onclick="insertAtCursor(document.getElementById('editing-code'), '\n‛코드를 입력해 주세요!‛')" style="background-position: -80px 0px;"></span>
+            </li>
+
+            <li class="wmd-button" id="wmd-image-button" title="Image <img> Ctrl+G">
+                <span id = "image" style="background-position: -100px 0px;" onclick="loadImage()"></span>
+            </li>
+
+            <!-- <li class="wmd-button wmd-snippet-button" id="wmd-snippet-button" title="JavaScript/HTML/CSS snippet Ctrl-M">
+                <span></span>
+            </li> -->
+
+            <li class="wmd-spacer wmd-spacer2" id="wmd-spacer2">
+            </li>
+
+            <li class="wmd-button" id="wmd-quote-button" title="Blockquote <blockquote> Ctrl+Q">
+                <span id = "preView" onclick="setOpacity()" style="background-position: -260px center;"></span>
+            </li>
+
+            <!-- <li class="wmd-button" id="wmd-olist-button" title="Numbered List <ol> Ctrl+O">
+                <span style="background-position: -120px 0px;"></span>
+            </li>
+
+            <li class="wmd-button" id="wmd-ulist-button" title="Bulleted List <ul> Ctrl+U">
+                <span style="background-position: -140px 0px;"></span>
+            </li>
+
+            <li class="wmd-button" id="wmd-heading-button" title="Heading <h1>/<h2> Ctrl+H">
+                <span style="background-position: -160px 0px;"></span>
+            </li>
+
+            <li class="wmd-button" id="wmd-hr-button" title="Horizontal Rule <hr> Ctrl+R">
+                <span style="background-position: -180px 0px;"></span>
+            </li> -->
+
+            <li class="wmd-spacer wmd-spacer3" id="wmd-spacer3"></li>
+            <li class="wmd-button" id="wmd-undo-button" >
+                <span id = "undobutton" onclick="doUndo()" style="background-position: -200px 0px;"></span>
+            </li>
+
+            <li class="wmd-button" id="wmd-redo-button" >
+                <span id = "redobutton" onclick = "doRedo()" style="background-position: -220px -20px;"></span>
+            </li>
+
+            <li class="wmd-spacer wmd-spacer-max"></li>
+            <li class="s-btn s-btn__muted s-btn__sm as-center" id="wmd-help-button" title="Markdown Editing Help" style="right: 0px;"></li>
+
+        </ul>
+
+        <!-- <div style="border-bottom: 1px solid gray ;height:fit-content ;">
+            <input src="bold.png" type="button" style="height: 30px; margin-top: 5px; margin-left: 5px;" onclick="insertAtCursor(document.getElementById('editing-code'), '\n‛코드를 입력해 주세요!‛'); update_mycode()">
+            <input id = ".click-me" type="button" onclick = "changeBoldStyle()" style="height: 30px; margin-top: 5px; margin-left: 5px;">
+            <input type="button" style="height: 30px; margin-top: 5px; margin-left: 5px;" onclick="opaCiTyNone()">
+            <input type="button" style="height: 30px; margin-top: 5px; margin-left: 5px;" onclick="changeItalicStyle()">
+
+    </div> -->
+
+
     </div>
-  <pre
-  style="height:300px;width:600px;"
-  id="highlighting-code"
-  class="hljs">
-  <code></code>
-</pre>
-    
+    <div id="mdhelp" class="mdhelp bg-black-025  bl br bc-black-200" style="">
+        <ul id="mdhelp-tabs" class="mdhelp-tabs bg-black-025 d-flex overflow-x-auto overflow-y-hidden">
+            <li onclick="setAnimation_Bold_Italic()">글시체</li>
+            <li onclick="setAnimation_Other(document.getElementById('code'))" >코드</li>
+            <li onclick="setAnimation_Other(document.getElementById('image'))" >이미지</li>
+            <li onclick="setAnimation_Other(document.getElementById('preView'))" >미리보기</li>
+            <li onclick="setAnimation_Other(document.getElementById('undobutton'))" >전 작업</li>
+            <li onclick="setAnimation_Other(document.getElementById('redobutton'))" >앞 작업</li>
+        </ul>
+
+    </div>
+
+    <form enctype=“multipart/form-data”>
+        <input id = "loadfile" type="file" style="display: none;" value="파일첨부" accept="image/*"/>
+    </form>
+
+
+    <textarea
+            id="editing-code"
+            placeholder="소스코드 입력"
+            spellcheck="false"
+            style="border: none; margin-top: -3px; min-height:400px; max-height: 400px; width:400px; top: 10px; resize: none; margin : 0; outline: none; "
+            onclick="update_code2(); resize();  "
+            oninput="update_mycode(); resize();">
+안녕하세요 저는 조수민입니다
+
+    </textarea>
+
+</div>
+
+
+<pre class = "hljs" style=" position: absolute; display: none; left: 1px; top: 70.5px; margin: 0; word-break: break-all; white-space: pre-wrap; height:390px; width:388px; background-color: white; color: black" id = "count1">
+    </pre>
+
+
+
+
+
+
 
 </body>
 </html>

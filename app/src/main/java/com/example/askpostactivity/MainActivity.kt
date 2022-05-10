@@ -1,9 +1,11 @@
 package com.example.askpostactivity
 
+import android.Manifest
+import android.Manifest.permission.CAMERA
+import android.Manifest.permission_group.CAMERA
 import android.content.Context
 import android.content.res.Resources
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 
@@ -13,12 +15,50 @@ import android.webkit.*
 import android.widget.*
 import android.util.DisplayMetrics
 import android.R.string.no
+import android.annotation.TargetApi
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.*
+import android.provider.MediaStore
+import android.view.Gravity
+import android.view.View
+import android.view.ViewTreeObserver
+import android.view.inputmethod.EditorInfo
+import androidx.annotation.RequiresApi
+import android.webkit.WebView
+import androidx.core.widget.addTextChangedListener
+import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import android.webkit.ValueCallback
+import android.widget.Toast
 
+import android.content.ActivityNotFoundException
+import android.database.Cursor
+import android.hardware.SensorPrivacyManager.Sensors.CAMERA
+import android.media.MediaRecorder.VideoSource.CAMERA
+import android.os.Environment.getExternalStorageDirectory
+import android.webkit.WebChromeClient.FileChooserParams
+import androidx.activity.result.contract.ActivityResultContracts
 
-
-
-
-
+import androidx.core.app.ActivityCompat.startActivityForResult
+import java.lang.Exception
+import java.security.Permissions
+import java.text.SimpleDateFormat
+import java.util.*
+import android.webkit.JavascriptInterface
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.net.toUri
+import java.io.*
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import androidx.core.content.ContentProviderCompat.requireContext
+import kotlin.collections.ArrayList
 
 
 //코드 블록 사진 생길때, 없애고 webview 할때, edittext 할때, 처음 코드 블록이 생성됐을 때 index를 받아서 거따가 insert, delete 하기!
@@ -28,30 +68,33 @@ import android.R.string.no
 class MainActivity : AppCompatActivity() {
 
     var isCodeBlockClicked = 0;
+    var firstClicked = 0;
+    var cameraPath = ""
+    var mWebViewImageUpload: ValueCallback<Array<Uri>>? = null
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.askpostfragmentlayout)
-        val widthPixels = resources.displayMetrics.widthPixels
-        Log.d("ASdfasdf", widthPixels.toString())
 
         var body_webview = findViewById<WebView>(R.id.body_webview)
         body_webview.settings.javaScriptEnabled = true
-        var codeblock = findViewById<ImageView>(R.id.codeblock)
-        var weburl = "file:///android_asset/auto_highlight.html"
+        body_webview.settings.domStorageEnabled = true
+        body_webview.settings.allowContentAccess = true
+        body_webview.settings.allowContentAccess = true
 
+
+        var weburl = "file:///android_asset/auto_highlight.html"
 
         class WebBrideg(private val mContext: Context) {
             @JavascriptInterface
             fun getwidth(): Float {
+                var width: Float = 0.0f
                 var linear = findViewById<LinearLayout>(R.id.body_box)
-                var width = linear.width.toFloat()
+                width = linear.width.toFloat()
                 return width
             }
-//            px = dp x dpi / 160
-//
-//            dp = px x 160 / dpi
-
-
 
             @JavascriptInterface
             fun showToast(code: String) {
@@ -59,280 +102,253 @@ class MainActivity : AppCompatActivity() {
             }
 
             @JavascriptInterface
-            fun getwidth(px:Float) : Float {
-                val resources: Resources = getResources()
+            fun getwidth(px: Float): Float {
+                var resources = resources
                 val metrics: DisplayMetrics = resources.getDisplayMetrics()
-                val dp = px * (DisplayMetrics.DENSITY_DEFAULT/ metrics.densityDpi.toFloat())
+                val dp = px * (DisplayMetrics.DENSITY_DEFAULT / metrics.densityDpi.toFloat())
                 return dp
             }
+
+            @JavascriptInterface
+            fun getText(innerHTML: String, changeText: String) {
+                var myString = innerHTML
+                var myText = changeText
+                Log.d("qwe", myString)
+                Log.d("asdf", myText)
+
+            }
+
+            @JavascriptInterface
+            fun getHtml(html: String) {
+                //위 자바스크립트가 호출되면 여기로 html이 반환됨
+                var source = html
+                Log.e("html: ", source)
+
+            }
+
+            @JavascriptInterface
+            fun gettest() {
+                Toast.makeText(mContext, "Asdfasdf", Toast.LENGTH_SHORT).show()
+            }
+
+
         }
+
+
+
+
+
         body_webview.addJavascriptInterface(WebBrideg(this), "Android")
+        body_webview.setWebViewClient(WebViewClient())
+
+
+
+
+
+        body_webview?.apply {
+            webViewClient = object : WebViewClient() {
+
+                override fun onPageStarted(
+                    view: WebView?,
+                    url: String?,
+                    favicon: Bitmap?
+                ) {
+                    super.onPageStarted(view, url, favicon)
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+
+                    runOnUiThread(Runnable {
+                        Log.d("asdfasdfads", "Asdfasfsfewf")
+                        body_webview.loadUrl("javascript:myupdate()")
+                    })
+
+
+                }
+            }
+        }
+
+
+        fun createImageFile(): File? {
+            val timeStap = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+            val imageFileName = "img_" + timeStap + "_"
+            val storageDir =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            return File.createTempFile(imageFileName, ".jpg", storageDir)
+        }
+
+        var launcher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val intent = result.data
+
+                    if (intent == null) {
+                        val results = arrayOf(Uri.parse(cameraPath))
+
+                        mWebViewImageUpload!!.onReceiveValue(results!!)
+                    } else {
+                        val results = intent!!.data!!
+                        Log.d("씨발",results.toString())
+                        mWebViewImageUpload!!.onReceiveValue(arrayOf(results!!))
+                    }
+                } else {
+                    mWebViewImageUpload!!.onReceiveValue(null)
+                    mWebViewImageUpload = null
+                }
+                Log.d("asdfasdf",result.data.toString())
+                Log.d("리죨트2", result.toString())
+
+
+
+            }
+
+        body_webview.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+
+                try {
+                    mWebViewImageUpload = filePathCallback!!
+                    var takePictureIntent: Intent?
+                    takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                    if (takePictureIntent.resolveActivity(packageManager) != null) {
+                        var photoFile: File?
+                        photoFile = createImageFile()
+                        takePictureIntent.putExtra("PhotoPath", photoFile.toString())
+
+                        if (photoFile != null) {
+                            cameraPath = "file:${photoFile.absolutePath}"
+                            takePictureIntent.putExtra(
+                                MediaStore.EXTRA_OUTPUT,
+                                Uri.fromFile(photoFile)
+                            )
+                        } else {
+                            takePictureIntent = null
+                        }
+
+                    }
+                    val contentSelectionIntent =
+                        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                    contentSelectionIntent.type = "image/*"
+                    var intentArray: Array<Intent?>
+
+                    if (takePictureIntent != null) {
+                        intentArray = arrayOf(takePictureIntent)
+                        Log.d("take",intentArray.toString())
+                    } else {
+                        intentArray = takePictureIntent?.get(0)!!
+                    }
+
+                    val chooserIntent = Intent(Intent.ACTION_CHOOSER)
+                    chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent)
+                    chooserIntent.putExtra(Intent.EXTRA_TITLE, "조수민진짜개멋있다")
+                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray)
+                    launcher.launch(chooserIntent)
+                } catch (e: Exception) {
+
+                }
+                return true
+            }
+
+        }
+
+
         body_webview.loadUrl(weburl)
 
-        var layoutInflater =
-            this.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        var containView = layoutInflater.inflate(R.layout.codeblock, null)
-
-        codeblock.setOnClickListener() {
-
-            // inflater 을 bitmap 으로 바꾸는 코드
-//            var imageview = findViewById<ImageView>(R.id.imageview)
-//            var mysize = imageview.measuredWidth
-//
-//            containView.measure(
-//                View.MeasureSpec.makeMeasureSpec(mysize, View.MeasureSpec.EXACTLY),
-//                View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY))
-//
-//            containView.layout(0, 0, containView.measuredWidth, containView.measuredHeight)
-//
-//            val bitmap = containView.drawToBitmap()
-//            val canvas = Canvas(bitmap)
-//            containView.draw(canvas)
-
-            //그럼 이제 이 이미지 누르면 창 뜨고,
-            //언어 고르면 edittext를 3개로 나누자.
-            //그 그림 기준 앞 뒤로 잘라서
-            //처음 edittext 그 앞으로 text 하고,
-            //뒤에 edittext 는 그 뒤 내용으로 text 하기.
-            //가운데 edittext 가 있고, 만약에 eidttext를 지운다고 하면 두 개의 edittext의 값을 받아와서 다 지운 후 다시 하나의 edittext로
-//
-//            if (isCodeBlockClicked == 0) {
-//
-//                var selectionCursor: Int = asdf.selectionStart
-//                asdf.getText().insert(selectionCursor, "╊")
-//                selectionCursor = asdf.selectionStart
-//
-//                val builder = SpannableStringBuilder(asdf.getText())
-//
-//                builder.setSpan(
-//                    //나중에 프레그먼트 처리할때 this 를 getactivity 로 바꾸기!
-//                    //특수문자 ╊ <- 절대 지우면 안됨 까먹음
-//                    ImageSpan(this,bitmap), selectionCursor - "╊".length, selectionCursor,
-//                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-//                )
-//
-//                builder.setSpan(object : ClickableSpan() {
-//                    override fun onClick(widget: View) {
-//                        //매개 변수 : 코드 블록 이미지가 있는 현재 index 와, 코드 블록을 기준 앞 뒤 문자열
-//                        codeChioceDialog(selectionCursor,asdf.text.slice(0..selectionCursor-2).toString(),
-//                                         asdf.text.slice(selectionCursor..asdf.text.length-1).toString())
-//
-//                        Log.d("index",selectionCursor.toString())
-//                    }
-//                },selectionCursor - "╊".length, selectionCursor, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-//
-//                asdf.setText(builder)
-//                asdf.setMovementMethod(LinkMovementMethod.getInstance());
-//                Log.d("코드블록 전 문자",asdf.text.slice(0..selectionCursor-2).toString())
-//                Log.d("wesef",asdf.text.slice(selectionCursor..asdf.text.length-1).toString())
-//                Log.d("zxcv",selectionCursor.toString())
-//
-//                asdf.setSelection(selectionCursor)
-//
-//                isCodeBlockClicked = 1
-//            }
-//            else if (isCodeBlockClicked == 1){
-//                codeblock.setImageResource(R.drawable.codeblock)
-//                isCodeBlockClicked = 0
-//            }
-//        }
+        var test = findViewById<TextView>(R.id.test)
+        test.setOnClickListener() {
         }
-
-//    fun codeChioceDialog(codeBlockIindex : Int, textBehindCodeBlock : String , textFrontCodeBlock : String){
-//
-//        var popupView = getLayoutInflater().inflate(R.layout.langchoice, null);
-//        var alertdialog = AlertDialog.Builder(this).create()
-//
-//        var pythonLinear = popupView.findViewById<LinearLayout>(R.id.pythonlinear)
-//        var kotlinLinear = popupView.findViewById<LinearLayout>(R.id.kotlinlinear)
-//        var javaScriptLinear = popupView.findViewById<LinearLayout>(R.id.jslinear)
-//        var javaLinear = popupView.findViewById<LinearLayout>(R.id.Javalinear)
-//        var htmlLinear = popupView.findViewById<LinearLayout>(R.id.htmllinear)
-//        var cssLinear = popupView.findViewById<LinearLayout>(R.id.csslinear)
-//        var cLinear = popupView.findViewById<LinearLayout>(R.id.clinear)
-//        var cplusLinear = popupView.findViewById<LinearLayout>(R.id.cpluslinear)
-//        var swiftLinear = popupView.findViewById<LinearLayout>(R.id.swiftlinear)
-//
-//        pythonLinear.setOnClickListener(){
-//            splitEditText(codeBlockIindex,textBehindCodeBlock,textFrontCodeBlock)
-//            alertdialog.hide()
-//        }
-//
-//        alertdialog.setView(popupView)
-//        alertdialog.show()
-//        alertdialog.window!!.setLayout(800,1000)
-//
-//    }
-//
-//
-//    fun splitEditText(codeBlockIindex : Int, textBehindCodeBlock : String , textFrontCodeBlock : String){
-//
-//        var editTextScroll = findViewById<ScrollView>(R.id.postEditScrollView)
-//        editTextScroll.removeAllViews()
-//
-//        var editTextLinearLayout = LinearLayout(this)
-//
-//        var LinearLayoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.MATCH_PARENT)
-//
-//        var buttonLinearParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.WRAP_CONTENT )
-//
-//        var editTextParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.WRAP_CONTENT)
-//
-//        var codeBlockParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.MATCH_PARENT)
-//
-//        var buttonparams = LinearLayout.LayoutParams(100,100,1.0f)
-//
-//        buttonparams.setMargins(50,0,50,0)
-//
-//        editTextLinearLayout.orientation = LinearLayout.VERTICAL
-//        editTextLinearLayout.layoutParams = LinearLayoutParams
-//
-//        var buttonLinearlayout = LinearLayout(this)
-//        buttonLinearlayout.gravity = Gravity.CENTER
-////        buttonLinearlayout.setBackgroundColor(getColor(R.color.black))
-//        buttonLinearlayout.layoutParams = buttonLinearParams
-//        buttonLinearlayout.orientation = LinearLayout.HORIZONTAL
-//
-//
-//
-//        var editTextBehindCodeBlock = EditText(this)
-//        editTextBehindCodeBlock.setSingleLine(false)
-//        editTextBehindCodeBlock.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-//        editTextBehindCodeBlock.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-//                                            InputType.TYPE_CLASS_TEXT)
-//        editTextBehindCodeBlock.layoutParams = editTextParams
-//        editTextBehindCodeBlock.setBackgroundResource(android.R.color.transparent);
-//
-//        var codeBlock = EditText(this)
-//        codeBlock.setBackgroundColor(getColor(R.color.gray));
-//        codeBlock.layoutParams = codeBlockParams
-//        codeBlock.hint = "코드를 적어주시고, 밑에 확인 버튼을 눌러주세요"
-//        codeBlock.setSingleLine(false)
-//        codeBlock.minHeight = 350
-//        codeBlock.gravity = Gravity.TOP
-//        codeBlock.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-//        codeBlock.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-//                InputType.TYPE_CLASS_TEXT)
-//
-//        var editTextFrontCodeBlock = EditText(this)
-//        editTextFrontCodeBlock.setSingleLine(false)
-//        editTextFrontCodeBlock.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-//        editTextFrontCodeBlock.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-//                InputType.TYPE_CLASS_TEXT)
-//        editTextFrontCodeBlock.layoutParams = editTextParams
-//        editTextFrontCodeBlock.setBackgroundResource(android.R.color.transparent)
-////        editTextFrontCodeBlock.setBackgroundColor(getColor(R.color.black))
-//
-//
-//        var conFormButton = Button(this)
-//        conFormButton.text = "확인"
-//        conFormButton.layoutParams = buttonparams
-//
-//        conFormButton.setOnClickListener(){
-//            conFormCodeInsert(codeBlockIindex, textBehindCodeBlock , textFrontCodeBlock , codeBlock.text.toString())
-//        }
-//
-//
-//        var cancelButton = Button(this)
-//        cancelButton.text = "취소"
-//        cancelButton.layoutParams = buttonparams
-//
-//        buttonLinearlayout.addView(conFormButton)
-//        buttonLinearlayout.addView(cancelButton)
-//
-//
-//
-//        editTextBehindCodeBlock.hint = "제목"
-//        editTextBehindCodeBlock.setText(textBehindCodeBlock)
-//        editTextFrontCodeBlock.setText(textFrontCodeBlock)
-//
-//
-//        editTextLinearLayout.addView(editTextBehindCodeBlock)
-//        editTextLinearLayout.addView(codeBlock)
-//        editTextLinearLayout.addView(buttonLinearlayout)
-//        editTextLinearLayout.addView(editTextFrontCodeBlock)
-//
-//        editTextScroll.addView(editTextLinearLayout)
-//
-//    }
-//
-//    fun conFormCodeInsert(codeBlockIindex : Int, textBehindCodeBlock : String , textFrontCodeBlock : String , code : String){
-//
-//        var editTextScroll = findViewById<ScrollView>(R.id.postEditScrollView)
-//        editTextScroll.removeAllViews()
-//
-//        var editTextLinearLayout = LinearLayout(this)
-//
-//        var LinearLayoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.MATCH_PARENT)
-//
-//        var editTextParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.WRAP_CONTENT)
-//
-//        var webViewParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//            LinearLayout.LayoutParams.WRAP_CONTENT)
-//
-//        editTextLinearLayout.orientation = LinearLayout.VERTICAL
-//        editTextLinearLayout.layoutParams = LinearLayoutParams
-//
-//        var editTextBehindCodeBlock = EditText(this)
-//        editTextBehindCodeBlock.setSingleLine(false)
-//        editTextBehindCodeBlock.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-//        editTextBehindCodeBlock.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-//                InputType.TYPE_CLASS_TEXT)
-//        editTextBehindCodeBlock.layoutParams = editTextParams
-//        editTextBehindCodeBlock.setBackgroundResource(android.R.color.transparent)
-//
-//        var codeWithHighLight = WebView(this)
-//        codeWithHighLight.layoutParams = webViewParams
-//        var weburl = "file:///android_asset/highlight.html"
-//        codeWithHighLight.settings.javaScriptEnabled = true
-////        codeWithHighLight.loadUrl("javascript:insertCode('language-javascript',var asdf = asdf)");
-////
-//
-
-//
-//
-//
-//
-//
-//
-//
-//        var editTextFrontCodeBlock = EditText(this)
-//        editTextFrontCodeBlock.setSingleLine(false)
-//        editTextFrontCodeBlock.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-//        editTextFrontCodeBlock.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-//                InputType.TYPE_CLASS_TEXT)
-//        editTextFrontCodeBlock.layoutParams = editTextParams
-//        editTextFrontCodeBlock.setBackgroundResource(android.R.color.transparent)
-//
-//        editTextBehindCodeBlock.setText(textBehindCodeBlock)
-//        editTextFrontCodeBlock.setText(textFrontCodeBlock)
-//
-//        editTextLinearLayout.addView(editTextBehindCodeBlock)
-//        editTextLinearLayout.addView(codeWithHighLight)
-//        editTextLinearLayout.addView(editTextFrontCodeBlock)
-//
-//        editTextScroll.addView(editTextLinearLayout)
-//
-//    }
-//
-//    fun asdf(){
-//        setContentView(R.layout.webview)
-//        var webview = findViewById<WebView>(R.id.webview)
-//        webview.settings.javaScriptEnabled = true
-//        var weburl : String = "file:///android_asset/highlight.html"
-//
-//
-//
-//        webview.loadUrl(weburl)
-//
-//
-//    }
-
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.d("wtwewt",data?.data.toString())
+
+        val bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data?.data)
+        Log.d("eifjskfsefs",bitmap.toString())
+        saveImage(bitmap)
+        if (requestCode == Activity.RESULT_OK ) {
+            val pickedImage = data?.data
+            //set the selected image to ImageView
+            Log.d("eifjskfsefs",pickedImage.toString())
+        }
+    }
+
+
+
+    fun uploadImageOnpage(resultCode: Int, intent : Intent?){
+        if (resultCode == Activity.RESULT_OK){
+            if(intent !=null){
+                mWebViewImageUpload?.onReceiveValue(
+                    WebChromeClient.FileChooserParams.parseResult(Activity.RESULT_OK,intent)
+                )
+                mWebViewImageUpload = null
+            }
+        }
+        else{
+            mWebViewImageUpload?.onReceiveValue(null)
+            mWebViewImageUpload = null
+        }
+    }
+
+    fun saveImage(bitmap: Bitmap){
+        val bytes = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG,100,bytes)
+
+        val photoDirectory = File(getExternalStorageDirectory().absolutePath+"/cameraphoto/")
+        if (!photoDirectory.exists()){
+            photoDirectory.mkdirs()
+        }
+        val imgFile = File(photoDirectory, "${System.currentTimeMillis()}.jpg")
+        Log.d("asfsfssef",imgFile.toString())
+        val fo:FileOutputStream
+//        try{
+////            imgFile.createNewFile()
+////            fo = FileOutputStream(imgFile)
+////            fo.write(bytes.toByteArray())
+////            fo.close()
+//        }
+//        catch (e: FileNotFoundException){
+//            e.printStackTrace()
+//        }
+//        catch (e: IOException){
+//            e.printStackTrace()
+//        }
+
+        uploadImageOnpage(Activity.RESULT_OK,Intent().apply {
+            data = imgFile.toUri()
+        })
+    }
+
+    fun captureImageResult(data : Uri?){
+
+        if(data == null){
+            mWebViewImageUpload?.onReceiveValue(null)
+            mWebViewImageUpload = null
+
+        }
+        else {
+
+            val bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data)
+            saveImage(bitmap)
+
+        }
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
