@@ -406,11 +406,19 @@
         }
         }
 
-        function putPicture(url){
+        function updateImage(uri){
             var str=document.getElementById("count1");
-            var resulttext = str.innerHTML;
-            resulttext = resulttext + "<img src = "+"//" + url + "//" + "/>
+            var img = document.createElement("img");
+            var imagePath = "file://" + uri;
+            img.style.width = "100%";
+            img.style.height = "50%";
+            img.src = imagePath;
+            Android.showToast(imagePath);
+            str.appendChild(img);
+
         }
+
+
 
         function changeBoldStyle() {
             var count = 0;

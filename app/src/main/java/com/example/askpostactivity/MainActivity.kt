@@ -3,6 +3,7 @@ package com.example.askpostactivity
 import android.Manifest
 import android.Manifest.permission.CAMERA
 import android.Manifest.permission_group.CAMERA
+import android.R.attr
 import android.content.Context
 import android.content.res.Resources
 import androidx.appcompat.app.AppCompatActivity
@@ -59,6 +60,16 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import androidx.core.content.ContentProviderCompat.requireContext
 import kotlin.collections.ArrayList
+import android.annotation.SuppressLint
+import android.content.CursorLoader
+
+import android.provider.DocumentsContract
+import android.R.attr.data
+
+import android.os.Build
+import com.example.askpostactivity.RealPathUtil.getRealPathFromURI_API11to18
+import com.example.askpostactivity.RealPathUtil.getRealPathFromURI_API19
+import com.example.askpostactivity.RealPathUtil.getRealPathFromURI_BelowAPI11
 
 
 //코드 블록 사진 생길때, 없애고 webview 할때, edittext 할때, 처음 코드 블록이 생성됐을 때 index를 받아서 거따가 insert, delete 하기!
@@ -73,7 +84,6 @@ class MainActivity : AppCompatActivity() {
     var mWebViewImageUpload: ValueCallback<Array<Uri>>? = null
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.askpostfragmentlayout)
@@ -82,7 +92,8 @@ class MainActivity : AppCompatActivity() {
         body_webview.settings.javaScriptEnabled = true
         body_webview.settings.domStorageEnabled = true
         body_webview.settings.allowContentAccess = true
-        body_webview.settings.allowContentAccess = true
+//        body_webview.webView.getSettings().setAllowFileAccess(true);
+        body_webview.settings.allowFileAccess = true
 
 
         var weburl = "file:///android_asset/auto_highlight.html"
@@ -189,16 +200,19 @@ class MainActivity : AppCompatActivity() {
                         mWebViewImageUpload!!.onReceiveValue(results!!)
                     } else {
                         val results = intent!!.data!!
-                        Log.d("씨발",results.toString())
                         mWebViewImageUpload!!.onReceiveValue(arrayOf(results!!))
+                        Log.d("씨발", results.toString())
+
+                        Log.d("씨발2", mWebViewImageUpload.toString())
+                        val inputStream = getFullPathFromUri(this,results)
+                        Log.d("씨발3", inputStream.toString())
+                        body_webview.loadUrl("javascript:updateImage("+'"'+inputStream.toString()+'"'+")")
+
                     }
                 } else {
                     mWebViewImageUpload!!.onReceiveValue(null)
                     mWebViewImageUpload = null
                 }
-                Log.d("asdfasdf",result.data.toString())
-                Log.d("리죨트2", result.toString())
-
 
 
             }
@@ -237,7 +251,7 @@ class MainActivity : AppCompatActivity() {
 
                     if (takePictureIntent != null) {
                         intentArray = arrayOf(takePictureIntent)
-                        Log.d("take",intentArray.toString())
+                        Log.d("take", intentArray.toString())
                     } else {
                         intentArray = takePictureIntent?.get(0)!!
                     }
@@ -253,58 +267,134 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
 
+
+
+
+
+
         }
 
 
         body_webview.loadUrl(weburl)
 
-        var test = findViewById<TextView>(R.id.test)
-        test.setOnClickListener() {
-        }
+
     }
+}
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        Log.d("wtwewt",data?.data.toString())
-
-        val bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data?.data)
-        Log.d("eifjskfsefs",bitmap.toString())
-        saveImage(bitmap)
-        if (requestCode == Activity.RESULT_OK ) {
-            val pickedImage = data?.data
-            //set the selected image to ImageView
-            Log.d("eifjskfsefs",pickedImage.toString())
-        }
-    }
-
-
-
-    fun uploadImageOnpage(resultCode: Int, intent : Intent?){
-        if (resultCode == Activity.RESULT_OK){
-            if(intent !=null){
-                mWebViewImageUpload?.onReceiveValue(
-                    WebChromeClient.FileChooserParams.parseResult(Activity.RESULT_OK,intent)
+fun getFullPathFromUri(ctx: Context, fileUri: Uri?): String? {
+    var fullPath: String? = null
+    val column = "_data"
+    var cursor = ctx.contentResolver.query(fileUri!!, null, null, null, null)
+    if (cursor != null) {
+        cursor.moveToFirst()
+        var document_id = cursor.getString(0)
+        if (document_id == null) {
+            for (i in 0 until cursor.columnCount) {
+                if (column.equals(cursor.getColumnName(i), ignoreCase = true)) {
+                    fullPath = cursor.getString(i)
+                    break
+                }
+            }
+        } else {
+            document_id = document_id.substring(document_id.lastIndexOf(":") + 1)
+            cursor.close()
+            val projection = arrayOf(column)
+            try {
+                cursor = ctx.contentResolver.query(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    projection, MediaStore.Images.Media._ID + " = ? ", arrayOf(document_id), null
                 )
-                mWebViewImageUpload = null
+                if (cursor != null) {
+                    cursor.moveToFirst()
+                    fullPath = cursor.getString(cursor.getColumnIndexOrThrow(column))
+                }
+            } finally {
+                if (cursor != null) cursor.close()
             }
         }
-        else{
-            mWebViewImageUpload?.onReceiveValue(null)
-            mWebViewImageUpload = null
+    }
+    return fullPath
+}
+
+
+object RealPathUtil {
+    @SuppressLint("NewApi")
+    fun getRealPathFromURI_API19(context: Context, uri: Uri?): String {
+        var filePath = ""
+        val wholeID = DocumentsContract.getDocumentId(uri)
+        val id = wholeID.split(":").toTypedArray()[1]
+        val column = arrayOf(MediaStore.Images.Media.DATA)
+
+        // where id is equal to
+        val sel = MediaStore.Images.Media._ID + "=?"
+        val cursor = context.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            column, sel, arrayOf(id), null
+        )
+        val columnIndex = cursor!!.getColumnIndex(column[0])
+        if (cursor.moveToFirst()) {
+            filePath = cursor.getString(columnIndex)
         }
+        cursor.close()
+        return filePath
     }
 
-    fun saveImage(bitmap: Bitmap){
-        val bytes = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG,100,bytes)
-
-        val photoDirectory = File(getExternalStorageDirectory().absolutePath+"/cameraphoto/")
-        if (!photoDirectory.exists()){
-            photoDirectory.mkdirs()
+    @SuppressLint("NewApi")
+    fun getRealPathFromURI_API11to18(context: Context?, contentUri: Uri?): String? {
+        val proj = arrayOf(MediaStore.Images.Media.DATA)
+        var result: String? = null
+        val cursorLoader = CursorLoader(
+            context,
+            contentUri, proj, null, null, null
+        )
+        val cursor: Cursor = cursorLoader.loadInBackground()
+        if (cursor != null) {
+            val column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+            cursor.moveToFirst()
+            result = cursor.getString(column_index)
         }
-        val imgFile = File(photoDirectory, "${System.currentTimeMillis()}.jpg")
-        Log.d("asfsfssef",imgFile.toString())
-        val fo:FileOutputStream
+        return result
+    }
+
+    fun getRealPathFromURI_BelowAPI11(context: Context, contentUri: Uri?): String {
+        val proj = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor = context.contentResolver.query(contentUri!!, proj, null, null, null)
+        val column_index = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+        cursor.moveToFirst()
+        return cursor.getString(column_index)
+    }
+}
+
+
+
+
+
+//    fun uploadImageOnpage(resultCode: Int, intent : Intent?){
+//        if (resultCode == Activity.RESULT_OK){
+//            if(intent !=null){
+//                mWebViewImageUpload?.onReceiveValue(
+//                    WebChromeClient.FileChooserParams.parseResult(Activity.RESULT_OK,intent)
+//                )
+//                mWebViewImageUpload = null
+//            }
+//        }
+//        else{
+//            mWebViewImageUpload?.onReceiveValue(null)
+//            mWebViewImageUpload = null
+//        }
+//    }
+//
+//    fun saveImage(bitmap: Bitmap){
+//        val bytes = ByteArrayOutputStream()
+//        bitmap.compress(Bitmap.CompressFormat.JPEG,100,bytes)
+//
+//        val photoDirectory = File(getExternalStorageDirectory().absolutePath+"/cameraphoto/")
+//        if (!photoDirectory.exists()){
+//            photoDirectory.mkdirs()
+//        }
+//        val imgFile = File(photoDirectory, "${System.currentTimeMillis()}.jpg")
+//        Log.d("saveImage",imgFile.toString())
+//        val fo:FileOutputStream
 //        try{
 ////            imgFile.createNewFile()
 ////            fo = FileOutputStream(imgFile)
@@ -318,27 +408,27 @@ class MainActivity : AppCompatActivity() {
 //            e.printStackTrace()
 //        }
 
-        uploadImageOnpage(Activity.RESULT_OK,Intent().apply {
-            data = imgFile.toUri()
-        })
-    }
-
-    fun captureImageResult(data : Uri?){
-
-        if(data == null){
-            mWebViewImageUpload?.onReceiveValue(null)
-            mWebViewImageUpload = null
-
-        }
-        else {
-
-            val bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data)
-            saveImage(bitmap)
-
-        }
-    }
-
-}
+//        uploadImageOnpage(Activity.RESULT_OK,Intent().apply {
+//            data = imgFile.toUri()
+//        })
+//    }
+//
+//    fun captureImageResult(data : Uri?){
+//
+//        if(data == null){
+//            mWebViewImageUpload?.onReceiveValue(null)
+//            mWebViewImageUpload = null
+//
+//        }
+//        else {
+//
+//            val bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data)
+//            saveImage(bitmap)
+//
+//        }
+//    }
+//
+//}
 
 
 
