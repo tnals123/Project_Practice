@@ -201,11 +201,8 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         val results = intent!!.data!!
                         mWebViewImageUpload!!.onReceiveValue(arrayOf(results!!))
-                        Log.d("씨발", results.toString())
 
-                        Log.d("씨발2", mWebViewImageUpload.toString())
                         val inputStream = getFullPathFromUri(this,results)
-                        Log.d("씨발3", inputStream.toString())
                         body_webview.loadUrl("javascript:updateImage("+'"'+inputStream.toString()+'"'+")")
 
                     }

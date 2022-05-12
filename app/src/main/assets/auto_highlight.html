@@ -171,6 +171,7 @@
             var checkTagRequired = true;
             var first = 0;
             var final = 0;
+<!--            【(이미지입니다)\n" + imagePath + "】-->
 
             var boldfirst = 0 ;
             var boldfinal = 0;
@@ -179,6 +180,10 @@
             var italicfirst = 0 ;
             var italicfinal = 0;
             var italiccount = 0;
+
+            var imagefirst = 0;
+            var imagefinal = 0;
+            var imagecount = 0;
 
             var result_elem = document.getElementById("count1");
             var text = document.getElementById("editing-code");
@@ -231,6 +236,26 @@
                     console.log(italicfirst,italicfinal)
                     resultString = resultString.replace(new RegExp(italictext, "g"),"<span style=" + "font-style:italic;"+">"+italicinnertext+"</span>");
                     italiccount = 0;
+                }
+
+                else if (resultString[i] == "【"){
+                    if (imagecount == 0){
+                        imagefirst = i;
+                        imagecount += 1;
+                    }
+                }
+                else if (resultString[i] == "】"){
+                    if (imagecount == 1){
+                        imagefinal = i;
+                        imagecount += 1;
+                    }
+                }
+
+                if (imagecount == 2){
+                    var imagetext = resultString.slice(imagefirst,imagefinal + 1);
+                    var imageinnertext = resultString.slice(imagefirst+1,imagefinal);
+                    resultString = resultString.replace(new RegExp(imagetext, "g"),"<img src="+'"'+imageinnertext+'"'+" style = " + "width:100%;"+">")
+                    imagecount = 0;
                 }
 
                 else if (resultString[i] == "‛"){
@@ -406,15 +431,27 @@
         }
         }
 
+<!--        function updateImage(uri){-->
+<!--            var str=document.getElementById("editing-code");-->
+<!--&lt;!&ndash;            var img = document.createElement("img");&ndash;&gt;-->
+<!--            var imagePath = "file://" + uri;-->
+<!--&lt;!&ndash;            img.style.width = "100%";&ndash;&gt;-->
+<!--&lt;!&ndash;            img.style.height = "50%";&ndash;&gt;-->
+<!--&lt;!&ndash;            img.src = imagePath;&ndash;&gt;-->
+<!--&lt;!&ndash;            Android.showToast(imagePath);&ndash;&gt;-->
+<!--&lt;!&ndash;            str.appendChild(img);&ndash;&gt;-->
+<!--            var resultStr = str.innerHTML;-->
+<!--            resultStr += "【(이미지입니다)" + imagePath + "】"-->
+
+<!--        }-->
+
         function updateImage(uri){
-            var str=document.getElementById("count1");
-            var img = document.createElement("img");
+            var str=document.getElementById("editing-code");
             var imagePath = "file://" + uri;
-            img.style.width = "100%";
-            img.style.height = "50%";
-            img.src = imagePath;
             Android.showToast(imagePath);
-            str.appendChild(img);
+            var resultStr = str.innerHTML;
+            resultStr += "【" + imagePath + "】\n"
+            str.innerHTML = resultStr
 
         }
 
